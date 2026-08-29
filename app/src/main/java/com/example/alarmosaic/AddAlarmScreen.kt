@@ -1,5 +1,7 @@
 package com.example.alarmosaic
 
+import androidx.activity.compose.BackHandler
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,9 +21,12 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun AddAlarmScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSave: (Int, Int) -> Unit
 ){
-
+    BackHandler{
+        onBack()
+    }
     var hour by remember { mutableStateOf(7) }
     var minute by remember { mutableStateOf(30) }
 
@@ -70,6 +75,14 @@ fun AddAlarmScreen(
             ){
                 Text("- 5 Minutes")
             }
+        }
+
+        Button(
+            onClick = {
+                onSave(hour,minute)
+            }
+        ){
+            Text("Save Alarm")
         }
 
         Button(
