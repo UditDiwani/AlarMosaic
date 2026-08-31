@@ -20,7 +20,7 @@ class AlarmStorage(
 
     suspend fun saveAlarms( alarms: List<Alarm>){
         val data = alarms.joinToString("|") { alarm -> 
-            "${alarm.hour},${alarm.minute},${alarm.enabled}"
+            "${alarm.id},${alarm.hour},${alarm.minute},${alarm.enabled}"
         }
         
         context.alarmDataStore.edit { preferences -> 
@@ -37,9 +37,10 @@ class AlarmStorage(
             val parts = alarmData.split(",")
 
             Alarm(
-                hour = parts[0].toInt(),
-                minute = parts[1].toInt(),
-                enabled = parts[2].toBoolean()
+                id = parts[0].toLong(),
+                hour = parts[1].toInt(),
+                minute = parts[2].toInt(),
+                enabled = parts[3].toBoolean()
             )
         } 
     }

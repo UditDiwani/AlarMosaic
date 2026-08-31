@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.Switch
+import androidx.compose.material3.AlertDialog
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,12 +32,22 @@ fun AlarmScreen() {
 
     var showAddAlarm by remember { mutableStateOf(false) }
     var alarms by remember { mutableStateOf(listOf<Alarm>())}
+    var pendingAlarm by remember { 
+        mutableStateOf<Alarm?>(null)
+    }
+    var showPermissionDialog by remember { mutableStateOf(false)}
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val storage = remember { 
         AlarmStorage(context)
     }
+
+    val scheduler = remember{
+        AlarmScheduler(context)
+    }
+
+
 
     LaunchedEffect(Unit){
         alarms = storage.loadAlarms()
@@ -48,12 +59,28 @@ fun AlarmScreen() {
                 showAddAlarm = false
             },
             onSave = { hour, minute -> 
-                val updatedAlarms = alarms + Alarm(hour,minute)
-                alarms = updatedAlarms
-                scope.launch {
-                    storage.saveAlarms(updatedAlarms)
+                val newAlarm = Alarm(
+                    id = System.currentTimeMillis(),
+                    hour = hour,
+                    minute = minute
+                )
+
+                if (scheduler.canScheduleExactAlarms()){
+                    val updatedAlarms = alarms + newAlarm
+
+                    alarms = updatedAlarms
+
+                    scope.launch {
+                        storage.saveAlarms(updatedAlarms)
+                    }
+
+                    scheduler.schedule(newAlarm)
+
+                    showAddAlarm = false
+                }else{
+                    pendingAlarm = newAlarm
+                    showPermissionDialog = true
                 }
-                showAddAlarm = false
             }
         )
     }
@@ -87,7 +114,7 @@ fun AlarmScreen() {
                                 checked = alarm.enabled,
                                 onCheckedChange = { enabled -> 
                                     val updatedAlarms = alarms.map { currentAlarm -> 
-                                        if(currentAlarm == alarm){
+                                        if(currentAlarm.id == alarm.id){
                                             alarm.copy(enabled = enabled)
                                         }else{
                                             currentAlarm
@@ -100,6 +127,19 @@ fun AlarmScreen() {
                                     }
                                 }
                             )
+                            Button(
+                                onClick = {
+                                    val updatedAlarms = alarms.filter {
+                                        it.id != alarm.id
+                                    }
+                                    alarms = updatedAlarms
+                                    scope.launch{
+                                        storage.saveAlarms(updatedAlarms)
+                                    }
+                                }
+                            ){
+                                Text("Delete")
+                            }
                         }
                     }
                 }
@@ -112,5 +152,41 @@ fun AlarmScreen() {
                 Text("+ ADD ALARM")
             }
         }
+    }
+    if(showPermissionDialog){
+        AlertDialog(
+            onDismissRequest = {
+                showPermissionDialog = false
+                pendingAlarm = null
+            },
+            title = {
+                Text("Exact alarm access")
+            },
+            text = {
+                Text(
+                    "AlarMosaic needs permission to wake your phone at the exact time you choose"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPermissionDialog = false
+                        scheduler.openExactAlarmSettings()
+                    }
+                ){
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showPermissionDialog = false
+                        pendingAlarm = null
+                    }
+                ){
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
