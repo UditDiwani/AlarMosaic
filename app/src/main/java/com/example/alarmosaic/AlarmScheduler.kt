@@ -12,6 +12,7 @@ import android.provider.Settings
 
 import java.util.Calendar
 
+import android.util.Log
 
 class AlarmScheduler(
     private val context: Context
@@ -31,13 +32,11 @@ class AlarmScheduler(
             calendar.add(Calendar.DAY_OF_YEAR,1)
         }
 
-        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = getPendingIntent(alarm)
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            alarm.id.toInt(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        Log.d(
+            "AlarMosaicAlarm",
+            "ALARM SCHEDULED FOR ${calendar.time}"
         )
 
         alarmManager.setExactAndAllowWhileIdle(
@@ -58,6 +57,36 @@ class AlarmScheduler(
         )
 
         context.startActivity(intent)
+    }
+
+    private fun getPendingIntent(alarm: Alarm): PendingIntent {
+
+        val intent = Intent(
+            context,
+            AlarmReceiver::class.java
+        ).apply {
+            putExtra("ALARM_ID", alarm.id)
+        }
+
+        return PendingIntent.getBroadcast(
+            context,
+            alarm.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or 
+                    PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    fun cancel(alarm: Alarm){
+
+        val pendingIntent = getPendingIntent(alarm)
+
+        alarmManager.cancel(pendingIntent)
+
+        Log.d(
+            "AlarMosaicAlarm",
+            "ALARM CANCELLED: ${alarm.id}"
+        )
     }
 }
 

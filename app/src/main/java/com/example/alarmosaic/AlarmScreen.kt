@@ -31,14 +31,18 @@ import kotlinx.coroutines.launch
 fun AlarmScreen() {
 
     var showAddAlarm by remember { mutableStateOf(false) }
+    
     var alarms by remember { mutableStateOf(listOf<Alarm>())}
+    
     var pendingAlarm by remember { 
         mutableStateOf<Alarm?>(null)
     }
     var showPermissionDialog by remember { mutableStateOf(false)}
 
     val context = LocalContext.current
+
     val scope = rememberCoroutineScope()
+    
     val storage = remember { 
         AlarmStorage(context)
     }
@@ -113,6 +117,13 @@ fun AlarmScreen() {
                             Switch(
                                 checked = alarm.enabled,
                                 onCheckedChange = { enabled -> 
+
+                                    if(enabled){
+                                        scheduler.schedule(alarm)
+                                    }else{
+                                        scheduler.cancel(alarm)
+                                    }
+
                                     val updatedAlarms = alarms.map { currentAlarm -> 
                                         if(currentAlarm.id == alarm.id){
                                             alarm.copy(enabled = enabled)
@@ -129,6 +140,9 @@ fun AlarmScreen() {
                             )
                             Button(
                                 onClick = {
+
+                                    scheduler.cancel(alarm)
+
                                     val updatedAlarms = alarms.filter {
                                         it.id != alarm.id
                                     }

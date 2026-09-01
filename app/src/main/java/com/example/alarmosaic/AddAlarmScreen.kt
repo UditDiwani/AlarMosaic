@@ -51,10 +51,10 @@ fun AddAlarmScreen(
             }
             Button(
                 onClick = {
-                    minute = (minute + 5) % 60
+                    minute = (minute + 1) % 60
                 }
             ){
-                Text("+ 5 Minutes")
+                Text("+ 1 Minutes")
             }
         }
 
@@ -70,10 +70,10 @@ fun AddAlarmScreen(
     
             Button(
                 onClick = {
-                    minute = (minute - 5 + 60) % 60
+                    minute = (minute - 1 + 60) % 60
                 }
             ){
-                Text("- 5 Minutes")
+                Text("- 1 Minutes")
             }
         }
 
