@@ -10,18 +10,33 @@ import java.util.Date
 
 import android.util.Log
 
+
 class AlarmReceiver : BroadcastReceiver(){
     override fun onReceive(
         context: Context,
         intent: Intent
     ){
+
+        val alarmId = intent.getLongExtra(
+            "ALARM_ID",
+            -1L
+        )
+
         val time = SimpleDateFormat(
             "HH:mm:ss",
             Locale.getDefault()
         ).format(Date())
+
         Log.d(
             "AlarMosaicAlarm",
-            "ALARM FIRED!! at $time"
+            "ALARM FIRED!! ID = $alarmId at $time"
         )
+
+        val serviceIntent = Intent(context, AlarmService::class.java).apply {
+            putExtra("ALARM_ID",alarmId)
+        }
+
+        context.startForegroundService(serviceIntent)
+
     }
 }
