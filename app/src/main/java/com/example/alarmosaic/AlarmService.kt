@@ -9,12 +9,16 @@ import android.os.IBinder
 
 import android.media.Ringtone
 import android.media.RingtoneManager
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+
+import android.net.Uri
 
 import androidx.core.app.NotificationCompat
 
 class AlarmService : Service(){
-
-    private var ringtone: Ringtone? = null
+    // private var ringtone: Ringtone? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     companion object {
         const val ACTION_STOP = "STOP_ALARM"
@@ -27,7 +31,10 @@ class AlarmService : Service(){
     ): Int{
 
         if(intent?.action == ACTION_STOP) {
-            ringtone?.stop()
+            // ringtone?.stop()
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
@@ -73,23 +80,50 @@ class AlarmService : Service(){
             notification
         )
 
-        val alarmUri = RingtoneManager.getDefaultUri(
-            RingtoneManager.TYPE_ALARM
-        )
+        val soundUriString = intent?.getStringExtra("SOUND_URI")
 
-        ringtone = RingtoneManager.getRingtone(
-            this,
-            alarmUri
-        )
+        if(soundUriString != null){
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(
+                        AudioAttributes.CONTENT_TYPE_MUSIC
+                    )
+                    .build()
+                )
 
-        ringtone?.play()
+                setDataSource(
+                    this@AlarmService,
+                    Uri.parse(soundUriString)
+                )
+
+                isLooping = true
+                prepare()
+                start()
+            }
+        }
+
+        // val alarmUri = RingtoneManager.getDefaultUri(
+        //     RingtoneManager.TYPE_ALARM
+        // )
+
+        // ringtone = RingtoneManager.getRingtone(
+        //     this,
+        //     alarmUri
+        // )
+
+        // ringtone?.play()
 
         return START_NOT_STICKY
     }
 
     override fun onDestroy(){
-        ringtone?.stop()
-        ringtone = null
+        // ringtone?.stop()
+        // ringtone = null
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
         super.onDestroy()
     }
 

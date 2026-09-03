@@ -62,7 +62,7 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute -> 
+            onSave = { hour, minute, soundUri -> 
                 val newAlarm = Alarm(
                     id = System.currentTimeMillis(),
                     hour = hour,
@@ -78,7 +78,7 @@ fun AlarmScreen() {
                         storage.saveAlarms(updatedAlarms)
                     }
 
-                    scheduler.schedule(newAlarm)
+                    scheduler.schedule(newAlarm,soundUri)
 
                     showAddAlarm = false
                 }else{

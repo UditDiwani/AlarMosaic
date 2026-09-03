@@ -19,7 +19,7 @@ class AlarmScheduler(
 ){
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-    fun schedule(alarm: Alarm){
+    fun schedule(alarm: Alarm, soundUri: String? = null){
 
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, alarm.hour)
@@ -32,7 +32,7 @@ class AlarmScheduler(
             calendar.add(Calendar.DAY_OF_YEAR,1)
         }
 
-        val pendingIntent = getPendingIntent(alarm)
+        val pendingIntent = getPendingIntent(alarm,soundUri)
 
         Log.d(
             "AlarMosaicAlarm",
@@ -59,13 +59,17 @@ class AlarmScheduler(
         context.startActivity(intent)
     }
 
-    private fun getPendingIntent(alarm: Alarm): PendingIntent {
+    private fun getPendingIntent(alarm: Alarm, soundUri: String? = null): PendingIntent {
 
         val intent = Intent(
             context,
             AlarmReceiver::class.java
         ).apply {
             putExtra("ALARM_ID", alarm.id)
+
+            if(soundUri != null){
+                putExtra("SOUND_URI",soundUri)
+            }
         }
 
         return PendingIntent.getBroadcast(
