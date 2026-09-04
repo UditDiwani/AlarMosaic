@@ -17,8 +17,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 
 import android.content.Intent
 
@@ -30,10 +32,12 @@ fun AddAlarmScreen(
     BackHandler{
         onBack()
     }
+
+    var context = LocalContext.current
     var hour by remember { mutableStateOf(7) }
     var minute by remember { mutableStateOf(30) }
 
-    var selectedSoundUri by remember {
+    var selectedSoundPath by remember {
         mutableStateOf<String?>(null)
     }
 
@@ -43,7 +47,24 @@ fun AddAlarmScreen(
         uri -> 
 
         if(uri != null){
-            selectedSoundUri = uri.toString()
+            
+            val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    takeFlags
+                )
+
+                val audioStorage = AudioStorage(context)
+
+                val copiedPath = audioStorage.copyAudio(uri)
+
+                selectedSoundPath = copiedPath
+            }
+            catch(e: SecurityException){
+                e.printStackTrace()
+            }
         }
     }
 
@@ -105,15 +126,15 @@ fun AddAlarmScreen(
         ){
             Text("🎶 Choose Audio 🎶")
         }
-        if(selectedSoundUri != null){
+        if(selectedSoundPath != null){
             Text(
-                text = selectedSoundUri!!
+                text = selectedSoundPath!!
             )
         }
 
         Button(
             onClick = {
-                onSave(hour,minute,selectedSoundUri)
+                onSave(hour,minute,selectedSoundPath)
             }
         ){
             Text("Save Alarm")

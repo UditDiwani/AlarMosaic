@@ -62,11 +62,12 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundUri -> 
+            onSave = { hour, minute, soundPath -> 
                 val newAlarm = Alarm(
                     id = System.currentTimeMillis(),
                     hour = hour,
-                    minute = minute
+                    minute = minute,
+                    soundPath = soundPath
                 )
 
                 if (scheduler.canScheduleExactAlarms()){
@@ -78,7 +79,7 @@ fun AlarmScreen() {
                         storage.saveAlarms(updatedAlarms)
                     }
 
-                    scheduler.schedule(newAlarm,soundUri)
+                    scheduler.schedule(newAlarm)
 
                     showAddAlarm = false
                 }else{
