@@ -22,8 +22,8 @@ class AlarmReceiver : BroadcastReceiver(){
             -1L
         )
         
-        val soundUri = intent.getStringExtra(
-            "SOUND_URI"
+        val soundPath = intent.getStringExtra(
+            "SOUND_PATH"
         )
 
         val time = SimpleDateFormat(
@@ -38,7 +38,7 @@ class AlarmReceiver : BroadcastReceiver(){
 
         val serviceIntent = Intent(context, AlarmService::class.java).apply {
             putExtra("ALARM_ID",alarmId)
-            putExtra("SOUND_URI",soundUri)
+            putExtra("SOUND_PATH",soundPath)
         }
 
         context.startForegroundService(serviceIntent)

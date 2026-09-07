@@ -12,7 +12,6 @@ import android.media.RingtoneManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 
-import android.net.Uri
 
 import androidx.core.app.NotificationCompat
 
@@ -80,9 +79,9 @@ class AlarmService : Service(){
             notification
         )
 
-        val soundUriString = intent?.getStringExtra("SOUND_URI")
+        val soundPath = intent?.getStringExtra("SOUND_PATH")
 
-        if(soundUriString != null){
+        if(soundPath != null){
             mediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
@@ -94,8 +93,7 @@ class AlarmService : Service(){
                 )
 
                 setDataSource(
-                    this@AlarmService,
-                    Uri.parse(soundUriString)
+                    soundPath
                 )
 
                 isLooping = true

@@ -5,17 +5,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
-
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -91,7 +97,16 @@ fun AlarmScreen() {
     }
     else{
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFEAF8FF),
+                        Color(0xFF9DD9F5),
+                        Color(0xFFFFD6B8)
+                    )
+                )
+            ),
             horizontalAlignment = Alignment.CenterHorizontally
         ){
             Text(
@@ -107,55 +122,72 @@ fun AlarmScreen() {
                 }
                 else{
                     alarms.forEach { alarm -> 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Text(
-                                text = String.format("%02d : %02d", alarm.hour,alarm.minute)
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 16.dp,
+                                    vertical = 8.dp
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White.copy(
+                                    alpha = 0.65f
+                                )
                             )
-                            Switch(
-                                checked = alarm.enabled,
-                                onCheckedChange = { enabled -> 
+                        ){
 
-                                    if(enabled){
-                                        scheduler.schedule(alarm)
-                                    }else{
-                                        scheduler.cancel(alarm)
-                                    }
-
-                                    val updatedAlarms = alarms.map { currentAlarm -> 
-                                        if(currentAlarm.id == alarm.id){
-                                            alarm.copy(enabled = enabled)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ){
+                                Text(
+                                    text = String.format("%02d : %02d", alarm.hour,alarm.minute)
+                                )
+                                Switch(
+                                    checked = alarm.enabled,
+                                    onCheckedChange = { enabled -> 
+    
+                                        if(enabled){
+                                            scheduler.schedule(alarm)
                                         }else{
-                                            currentAlarm
+                                            scheduler.cancel(alarm)
+                                        }
+    
+                                        val updatedAlarms = alarms.map { currentAlarm -> 
+                                            if(currentAlarm.id == alarm.id){
+                                                alarm.copy(enabled = enabled)
+                                            }else{
+                                                currentAlarm
+                                            }
+                                        }
+                                        alarms = updatedAlarms
+    
+                                        scope.launch { 
+                                            storage.saveAlarms(updatedAlarms)
                                         }
                                     }
-                                    alarms = updatedAlarms
-
-                                    scope.launch { 
-                                        storage.saveAlarms(updatedAlarms)
+                                )
+                                Button(
+                                    onClick = {
+    
+                                        scheduler.cancel(alarm)
+    
+                                        val updatedAlarms = alarms.filter {
+                                            it.id != alarm.id
+                                        }
+                                        alarms = updatedAlarms
+                                        scope.launch{
+                                            storage.saveAlarms(updatedAlarms)
+                                        }
                                     }
+                                ){
+                                    Text("Delete")
                                 }
-                            )
-                            Button(
-                                onClick = {
-
-                                    scheduler.cancel(alarm)
-
-                                    val updatedAlarms = alarms.filter {
-                                        it.id != alarm.id
-                                    }
-                                    alarms = updatedAlarms
-                                    scope.launch{
-                                        storage.saveAlarms(updatedAlarms)
-                                    }
-                                }
-                            ){
-                                Text("Delete")
                             }
                         }
+
                     }
                 }
             }
