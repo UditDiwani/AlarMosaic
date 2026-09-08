@@ -5,8 +5,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -14,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 
 
 import androidx.compose.material3.Text
@@ -96,109 +104,144 @@ fun AlarmScreen() {
         )
     }
     else{
-        Column(
+
+        Box(
             modifier = Modifier.fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEAF8FF),
-                        Color(0xFF9DD9F5),
-                        Color(0xFFFFD6B8)
-                    )
-                )
-            ),
-            horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Text(
-                text = "AlarMosaic"
-            )
+            SKyBackground()
             Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxSize(),
+                // .background(
+                //     brush = Brush.verticalGradient(
+                //         colors = listOf(
+                //             Color(0xFFEAF8FF),
+                //             Color(0xFF9DD9F5),
+                //             Color(0xFFFFD6B8)
+                //         )
+                //     )
+                // ),
+                horizontalAlignment = Alignment.CenterHorizontally
             ){
-                if(alarms.isEmpty()){
-                    Text("No Alarms")
-                }
-                else{
-                    alarms.forEach { alarm -> 
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
+                Text(
+                    text = "AlarMosaic"
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ){
+                    if(alarms.isEmpty()){
+                        Text("No Alarms")
+                    }
+                    else{
+                        
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth()
+                                .weight(1f)
                                 .padding(
-                                    horizontal = 16.dp,
-                                    vertical = 8.dp
+                                    horizontal = 8.dp,
+                                    vertical = 48.dp
                                 ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White.copy(
-                                    alpha = 0.65f
-                                )
-                            )
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+    
                         ){
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ){
-                                Text(
-                                    text = String.format("%02d : %02d", alarm.hour,alarm.minute)
+                            items(alarms) { alarm -> 
+        
+                                GlassCard(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .padding(
+                                            horizontal = 16.dp,
+                                            vertical = 8.dp
+                                        )
                                 )
-                                Switch(
-                                    checked = alarm.enabled,
-                                    onCheckedChange = { enabled -> 
-    
-                                        if(enabled){
-                                            scheduler.schedule(alarm)
-                                        }else{
-                                            scheduler.cancel(alarm)
+                                    
+                                {
+        
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ){
+        
+                                        Column(
+                                            verticalArrangement = Arrangement.Center
+                                        ){
+                                            Text(
+                                                text = String.format("%02d : %02d", alarm.hour,alarm.minute),
+                                                fontSize = 32.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+        
+                                            Text(
+                                                text = if(alarm.soundPath!=null){
+                                                    "🎶✨ Custom Sound ✨🎶"
+                                                }else{
+                                                    "🔔 Default Sound 🔔"
+                                                },
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         }
-    
-                                        val updatedAlarms = alarms.map { currentAlarm -> 
-                                            if(currentAlarm.id == alarm.id){
-                                                alarm.copy(enabled = enabled)
-                                            }else{
-                                                currentAlarm
+        
+                                        Switch(
+                                            checked = alarm.enabled,
+                                            onCheckedChange = { enabled -> 
+            
+                                                if(enabled){
+                                                    scheduler.schedule(alarm)
+                                                }else{
+                                                    scheduler.cancel(alarm)
+                                                }
+            
+                                                val updatedAlarms = alarms.map { currentAlarm -> 
+                                                    if(currentAlarm.id == alarm.id){
+                                                        alarm.copy(enabled = enabled)
+                                                    }else{
+                                                        currentAlarm
+                                                    }
+                                                }
+                                                alarms = updatedAlarms
+            
+                                                scope.launch { 
+                                                    storage.saveAlarms(updatedAlarms)
+                                                }
                                             }
-                                        }
-                                        alarms = updatedAlarms
-    
-                                        scope.launch { 
-                                            storage.saveAlarms(updatedAlarms)
-                                        }
-                                    }
-                                )
-                                Button(
-                                    onClick = {
-    
-                                        scheduler.cancel(alarm)
-    
-                                        val updatedAlarms = alarms.filter {
-                                            it.id != alarm.id
-                                        }
-                                        alarms = updatedAlarms
-                                        scope.launch{
-                                            storage.saveAlarms(updatedAlarms)
+                                        )
+                                        Button(
+                                            onClick = {
+            
+                                                scheduler.cancel(alarm)
+            
+                                                val updatedAlarms = alarms.filter {
+                                                    it.id != alarm.id
+                                                }
+                                                alarms = updatedAlarms
+                                                scope.launch{
+                                                    storage.saveAlarms(updatedAlarms)
+                                                }
+                                            }
+                                        ){
+                                            Text("Delete")
                                         }
                                     }
-                                ){
-                                    Text("Delete")
                                 }
+        
                             }
+    
                         }
-
                     }
                 }
-            }
-            Button(
-                onClick = { 
-                    showAddAlarm = true 
+                Button(
+                    onClick = { 
+                        showAddAlarm = true 
+                    }
+                ){
+                    Text("+ ADD ALARM")
                 }
-            ){
-                Text("+ ADD ALARM")
             }
         }
+
     }
     if(showPermissionDialog){
         AlertDialog(
