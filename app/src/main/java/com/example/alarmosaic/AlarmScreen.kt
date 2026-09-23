@@ -21,8 +21,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.text.font.FontWeight
-
+import androidx.compose.ui.layout.onGloballyPositioned
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
@@ -65,7 +66,9 @@ fun AlarmScreen() {
         AlarmScheduler(context)
     }
 
-
+    var rootSize by remember {
+        mutableStateOf(IntSize.Zero)
+    }
 
     LaunchedEffect(Unit){
         alarms = storage.loadAlarms()
@@ -107,19 +110,14 @@ fun AlarmScreen() {
 
         Box(
             modifier = Modifier.fillMaxSize()
+                        .onGloballyPositioned{ coordinates -> 
+                            rootSize = coordinates.size
+                        }
+
         ){
-            SKyBackground()
+            SkyBackground()
             Column(
                 modifier = Modifier.fillMaxSize(),
-                // .background(
-                //     brush = Brush.verticalGradient(
-                //         colors = listOf(
-                //             Color(0xFFEAF8FF),
-                //             Color(0xFF9DD9F5),
-                //             Color(0xFFFFD6B8)
-                //         )
-                //     )
-                // ),
                 horizontalAlignment = Alignment.CenterHorizontally
             ){
                 Text(
@@ -153,7 +151,8 @@ fun AlarmScreen() {
                                         .padding(
                                             horizontal = 16.dp,
                                             vertical = 8.dp
-                                        )
+                                        ),
+                                        rootSize = rootSize
                                 )
                                     
                                 {
