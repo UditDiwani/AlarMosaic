@@ -30,7 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import sun.java2d.pipe.RenderBuffer
+
 
 @Composable
 fun GlassCard(
