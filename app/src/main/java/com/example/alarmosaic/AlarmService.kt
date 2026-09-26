@@ -21,6 +21,7 @@ class AlarmService : Service(){
 
     companion object {
         const val ACTION_STOP = "STOP_ALARM"
+        const val ACTION_ALARM_STOPPED = "com.example.alarmosaic.ACTION_ALARM_STOPPED"
     }
 
     override fun onStartCommand(
@@ -35,6 +36,9 @@ class AlarmService : Service(){
             mediaPlayer?.release()
             mediaPlayer = null
             stopForeground(STOP_FOREGROUND_REMOVE)
+            sendBroadcast(
+                Intent(ACTION_ALARM_STOPPED)
+            )
             stopSelf()
             return START_NOT_STICKY
         }
@@ -58,6 +62,22 @@ class AlarmService : Service(){
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val ringingIntent = Intent(
+            this,
+            AlarmRingingActivity::class.java
+        ).apply{
+            putExtra("ALARM_ID",alarmId)
+            this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val ringingPendingIntent = PendingIntent.getActivity(
+            this,
+            alarmId.toInt(),
+            ringingIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or 
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(
             this,
             "alarm_channel"
@@ -66,7 +86,12 @@ class AlarmService : Service(){
         .setContentTitle("AlarMosaic")
         .setContentText("YOUR PHONEE.. LINGING! 2")
         .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setCategory(NotificationCompat.CATEGORY_ALARM)
         .setOngoing(true)
+        .setFullScreenIntent(
+            ringingPendingIntent,
+            true
+        )
         .addAction(
             android.R.drawable.ic_menu_close_clear_cancel,
             "STOP",

@@ -4,7 +4,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-    
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+
     <application
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:label="AlarMosaic">
@@ -19,6 +20,9 @@
             </intent-filter>
 
         </activity>
+        <activity 
+            android:name=".AlarmRingingActivity"
+            android:exported="false" />
         <receiver 
             android:name=".AlarmReceiver"
             android:exported="false" />
