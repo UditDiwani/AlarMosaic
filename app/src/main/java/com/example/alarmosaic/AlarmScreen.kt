@@ -56,7 +56,7 @@ fun AlarmScreen() {
 
     val context = LocalContext.current
 
-    val scope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
     
     val storage = remember { 
         AlarmStorage(context)
@@ -79,30 +79,36 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundPath -> 
-                val newAlarm = Alarm(
-                    id = System.currentTimeMillis(),
-                    hour = hour,
-                    minute = minute,
-                    soundPath = soundPath
-                )
+            onSave = { hour, minute, soundPath ->
+                
+                coroutineScope.launch {
 
-                if (scheduler.canScheduleExactAlarms()){
-                    val updatedAlarms = alarms + newAlarm
+                    val idStorage = IdStorage(context)
 
-                    alarms = updatedAlarms
+                    val alarmId = idStorage.nextAlarmId()
 
-                    scope.launch {
+                    val newAlarm = Alarm(
+                        id = alarmId,
+                        hour = hour,
+                        minute = minute,
+                        soundPath = soundPath
+                    )
+                    if (scheduler.canScheduleExactAlarms()){
+                        val updatedAlarms = alarms + newAlarm
+    
+                        alarms = updatedAlarms
+    
                         storage.saveAlarms(updatedAlarms)
+                        
+                        scheduler.schedule(newAlarm)
+    
+                        showAddAlarm = false
+                    }else{
+                        pendingAlarm = newAlarm
+                        showPermissionDialog = true
                     }
-
-                    scheduler.schedule(newAlarm)
-
-                    showAddAlarm = false
-                }else{
-                    pendingAlarm = newAlarm
-                    showPermissionDialog = true
                 }
+
             }
         )
     }
@@ -202,7 +208,7 @@ fun AlarmScreen() {
                                                 }
                                                 alarms = updatedAlarms
             
-                                                scope.launch { 
+                                                coroutineScope.launch { 
                                                     storage.saveAlarms(updatedAlarms)
                                                 }
                                             }
@@ -216,7 +222,7 @@ fun AlarmScreen() {
                                                     it.id != alarm.id
                                                 }
                                                 alarms = updatedAlarms
-                                                scope.launch{
+                                                coroutineScope.launch{
                                                     storage.saveAlarms(updatedAlarms)
                                                 }
                                             }

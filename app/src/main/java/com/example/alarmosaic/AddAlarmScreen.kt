@@ -26,12 +26,15 @@ import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +46,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.onGloballyPositioned
 
+import kotlinx.coroutines.launch
+
 import android.content.Intent
+import android.media.MediaPlayer
+import com.example.alarmosaic.AudioArtifact
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +62,7 @@ fun AddAlarmScreen(
         onBack()
     }
 
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var hour by remember { mutableStateOf(7) }
     var minute by remember { mutableStateOf(30) }
@@ -69,6 +77,23 @@ fun AddAlarmScreen(
 
     var selectedSoundPath by remember {
         mutableStateOf<String?>(null)
+    }
+
+    var audioName by remember { mutableStateOf("") }
+
+    var pendingAudioArtifact by remember {
+        mutableStateOf<AudioArtifact?>(null)
+    }
+
+    var isPlaying by remember { mutableStateOf(false) }
+
+    val previewPlayer = remember { mutableStateOf<MediaPlayer?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            previewPlayer.value?.release()
+            previewPlayer.value = null
+        }
     }
 
     val audioPicker = rememberLauncherForActivityResult(
@@ -202,14 +227,100 @@ fun AddAlarmScreen(
                         modifier = Modifier.height(12.dp)
                     )
                             
-                    Text(
-                        text = if(selectedSoundPath == null){
-                            "Default sound"
-                        }else{
-                            "🎶 Custom Sound Selected 🎶"
-                        },
-                        fontSize = 14.sp 
-                    )
+                    if(selectedSoundPath == null){
+
+                        Text(
+                            text = "Default sound",
+                            fontSize = 16.sp
+                        )
+                    } else {
+
+                        Text(
+                            text = "Audio imported!✅",
+                            fontSize = 16.sp
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            Button(
+                                onClick = {
+                                    if(isPlaying){
+                                        previewPlayer.value?.pause()
+                                        isPlaying = false
+                                    }else{
+                                        previewPlayer.value?.release()
+
+                                        val player = MediaPlayer().apply {
+                                            setDataSource(selectedSoundPath)
+
+                                            setOnCompletionListener {
+                                                isPlaying = false
+                                            }
+
+                                            prepare()
+                                            start()
+                                        }
+
+                                        previewPlayer.value = player
+                                        isPlaying = true 
+                                    }
+                                }
+                            ){
+                                Text(
+                                    text = if(isPlaying) "⏸ Pause" else "▶ Play"
+                                )
+                            }
+
+                            Button(
+                                onClick = {
+                                    previewPlayer.value?.stop()
+                                    previewPlayer.value?.release()
+                                    previewPlayer.value = null 
+                                    isPlaying = false 
+                                }
+                            ){
+                                Text("⏹ Stop")
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = audioName,
+                            onValueChange = {
+                                audioName = it 
+                            },
+                            label = {
+                                Text("Name this audio")
+                            },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Button(
+                            onClick = {
+                                val path = selectedSoundPath
+
+                                if(path!=null && audioName.isNotBlank()){
+                                    coroutineScope.launch {
+
+                                        val idStorage = IdStorage(context)
+
+                                        val artifactId = idStorage.nextAudioArtifactId()
+
+                                        pendingAudioArtifact = AudioArtifact(
+                                            id = artifactId,
+                                            name = audioName.trim(),
+                                            filePath = path 
+                                        )
+                                    }
+                                }
+                            },
+                            enabled = audioName.isNotBlank()
+                        ){
+                            Text("Confirm")
+                        }
+                    }
                                 
                     Spacer(
                         modifier = Modifier.height(16.dp)
