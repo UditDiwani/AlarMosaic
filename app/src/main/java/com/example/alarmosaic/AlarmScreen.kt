@@ -47,6 +47,10 @@ fun AlarmScreen() {
 
     var showAddAlarm by remember { mutableStateOf(false) }
     
+    var showMediaLibrary by remember { 
+        mutableStateOf(false)
+    }
+
     var alarms by remember { mutableStateOf(listOf<Alarm>())}
     
     var pendingAlarm by remember { 
@@ -79,13 +83,18 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundPath ->
+            onSave = { hour, minute, soundPath,audioArtifact ->
                 
                 coroutineScope.launch {
 
                     val idStorage = IdStorage(context)
 
                     val alarmId = idStorage.nextAlarmId()
+
+                    if(audioArtifact !=null){
+                        val audioArtifactStorage = AudioArtifactStorage(context)
+                        audioArtifactStorage.save(audioArtifact)
+                    }
 
                     val newAlarm = Alarm(
                         id = alarmId,
@@ -112,6 +121,15 @@ fun AlarmScreen() {
             }
         )
     }
+
+    else if(showMediaLibrary){
+        MediaLibraryScreen(
+            onBack = {
+                showMediaLibrary = false
+            }
+        )
+    }
+
     else{
 
         Box(
@@ -122,6 +140,13 @@ fun AlarmScreen() {
 
         ){
             SkyBackground()
+            Button(
+                onClick = {
+                    showMediaLibrary = true
+                }
+            ){
+                Text("🎵 MEDIA LIBRARY")
+            }
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally

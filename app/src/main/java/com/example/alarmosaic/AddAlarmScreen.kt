@@ -56,7 +56,7 @@ import com.example.alarmosaic.AudioArtifact
 @Composable
 fun AddAlarmScreen(
     onBack: () -> Unit,
-    onSave: (Int, Int, String?) -> Unit
+    onSave: (Int, Int, String?,AudioArtifact?) -> Unit
 ){
     BackHandler{
         onBack()
@@ -351,7 +351,7 @@ fun AddAlarmScreen(
 
             Button(
                 onClick = {
-                    onSave(hour,minute,selectedSoundPath)
+                    onSave(hour,minute,selectedSoundPath,pendingAudioArtifact)
                 },
                 modifier = Modifier.fillMaxWidth().height(58.dp)
             ){
