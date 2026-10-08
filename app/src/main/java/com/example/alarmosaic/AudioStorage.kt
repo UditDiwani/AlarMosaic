@@ -41,4 +41,14 @@ class AudioStorage(
 
         return destinationFile.absolutePath
     }
+
+    fun deleteAudio(path: String) : Boolean {
+        val file = File(path) 
+
+        if(!file.exists()) {
+            return false 
+        }
+
+        return file.delete()
+    }
 }

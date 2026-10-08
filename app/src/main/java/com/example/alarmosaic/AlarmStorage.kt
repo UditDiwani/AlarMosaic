@@ -47,4 +47,16 @@ class AlarmStorage(
             )
         } 
     }
+
+    suspend fun delete(id: Long){
+        val existingAlarms = loadAlarms()
+        val updatedAlarms = existingAlarms.filter { it.id != id }
+
+        saveAlarms(updatedAlarms)
+
+        if(updatedAlarms.isEmpty()){
+            val idStorage = IdStorage(context)
+            idStorage.resetAlarmId()
+        }
+    }
 }

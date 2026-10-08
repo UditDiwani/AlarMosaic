@@ -242,13 +242,9 @@ fun AlarmScreen() {
                                             onClick = {
             
                                                 scheduler.cancel(alarm)
-            
-                                                val updatedAlarms = alarms.filter {
-                                                    it.id != alarm.id
-                                                }
-                                                alarms = updatedAlarms
                                                 coroutineScope.launch{
-                                                    storage.saveAlarms(updatedAlarms)
+                                                    storage.delete(alarm.id)
+                                                    alarms = storage.loadAlarms()
                                                 }
                                             }
                                         ){

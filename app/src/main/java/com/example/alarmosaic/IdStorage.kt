@@ -41,4 +41,16 @@ class IdStorage(private val context: Context){
 
         return generatedId
     }
+
+    suspend fun resetAlarmId() {
+        context.idDataStore.edit {
+            it[nextAlarmIdKey] = 1L
+        }
+    }
+
+    suspend fun resetAudioArtifactId() {
+        context.idDataStore.edit {
+            it[nextAudioArtifactIdKey] = 1L
+        }
+    }
 }

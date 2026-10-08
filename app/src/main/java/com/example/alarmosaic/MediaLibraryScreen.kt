@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 import android.media.MediaPlayer
 
@@ -75,6 +79,26 @@ fun MediaLibraryScreen(
         mutableStateOf(IntSize.Zero)
     }
 
+    var pendingAudioPath by remember { mutableStateOf<String?>(null) }
+    var showNameDialog by remember { mutableStateOf(false) } 
+    var mediaName by remember { mutableStateOf("") }
+
+    var audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ){ uri ->
+        if(uri != null){
+            coroutineScope.launch {
+                val audioStorage = AudioStorage(context)
+
+                val path = audioStorage.copyAudio(uri)
+
+                pendingAudioPath = path 
+                mediaName = ""
+                showNameDialog = true 
+            }
+        }
+    }
+
     DisposableEffect(Unit){
 
         onDispose {
@@ -107,6 +131,13 @@ fun MediaLibraryScreen(
             text = "🎵 MEDIA LIBRARY 🎵"
         )
 
+        Button(
+            onClick = {
+                audioPickerLauncher.launch(arrayOf("audio/*"))
+            }
+        ){
+            Text("+ ADD MEDIA")
+        }
         Spacer(
             modifier = Modifier.height(24.dp)
         )
@@ -257,16 +288,100 @@ fun MediaLibraryScreen(
 
                         if(artifact !=null ){
                             coroutineScope.launch {
-                                val storage = AudioArtifactStorage(context)
+                                val artifactStorage = AudioArtifactStorage(context)
+                                val audioStorage = AudioStorage(context)
 
-                                storage.delete(artifact.id)
+                                audioStorage.deleteAudio(artifact.filePath)
+                                artifactStorage.delete(artifact.id)
 
-                                artifacts = storage.loadAll()
+                                artifacts = artifactStorage.loadAll()
                             }
                         }
                     }
                 ){
                     Text("Delete")
+                }
+            }
+        )
+    }
+    if (showNameDialog){
+        AlertDialog(
+            onDismissRequest = {
+                val path = pendingAudioPath
+
+                if(path!=null){
+                    coroutineScope.launch {
+                        val audioStorage = AudioStorage(context)
+                        audioStorage.deleteAudio(path)
+                    }
+                }
+
+                showNameDialog = false 
+                pendingAudioPath = null 
+                mediaName = ""
+            },
+            title = {
+                Text("🎵 Name your media🎵")
+            },
+            text = {
+                OutlinedTextField(
+                    value = mediaName,
+                    onValueChange = { mediaName = it },
+                    label = {
+                        Text("Media name")
+                    },
+                    singleLine = true 
+                )
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        val path = pendingAudioPath
+
+                        if(path!=null){
+                            coroutineScope.launch {
+                                val audioStorage = AudioStorage(context)
+                                audioStorage.deleteAudio(path)
+                            }
+                        }
+                        showNameDialog = false
+                        pendingAudioPath = null
+                        mediaName = ""
+                    }
+                ){
+                    Text("Cancel")
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val path = pendingAudioPath
+
+                        if(path != null && mediaName.isNotBlank()){
+                            coroutineScope.launch {
+                                val idStorage = IdStorage(context)
+                                val artifactId = idStorage.nextAudioArtifactId()
+                                val artifact = AudioArtifact(
+                                    id = artifactId,
+                                    name = mediaName.trim(),
+                                    filePath = path
+                                )
+
+                                val artifactStorage = AudioArtifactStorage(context)
+
+                                artifactStorage.save(artifact)
+
+                                artifacts = artifactStorage.loadAll()
+
+                                showNameDialog = false
+                                pendingAudioPath = null
+                                mediaName =""
+                            }
+                        }
+                    },
+                    enabled = mediaName.isNotBlank()
+                ){
+                    Text("Save")
                 }
             }
         )

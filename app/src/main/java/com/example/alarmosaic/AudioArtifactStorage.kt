@@ -61,5 +61,10 @@ class AudioArtifactStorage(
         context.audioArtifactDataStore.edit { preferences -> 
             preferences[artifactsKey] = data
         }
+
+        if(updatedArtifacts.isEmpty()){
+            val idStorage = IdStorage(context)
+            idStorage.resetAudioArtifactId()
+        }
     }
 }
