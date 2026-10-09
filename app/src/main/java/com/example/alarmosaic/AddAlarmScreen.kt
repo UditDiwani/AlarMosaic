@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
@@ -27,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Card 
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
@@ -35,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,18 +50,20 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.window.Dialog
 
 import kotlinx.coroutines.launch
 
 import android.content.Intent
 import android.media.MediaPlayer
 import com.example.alarmosaic.AudioArtifact
+import java.awt.Dialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddAlarmScreen(
     onBack: () -> Unit,
-    onSave: (Int, Int, String?,AudioArtifact?) -> Unit
+    onSave: (Int, Int, String?,AudioArtifact?, String) -> Unit
 ){
     BackHandler{
         onBack()
@@ -81,6 +88,8 @@ fun AddAlarmScreen(
 
     var audioName by remember { mutableStateOf("") }
 
+    var alarmLabel by remember { mutableStateOf("") }
+
     var pendingAudioArtifact by remember {
         mutableStateOf<AudioArtifact?>(null)
     }
@@ -89,10 +98,26 @@ fun AddAlarmScreen(
 
     val previewPlayer = remember { mutableStateOf<MediaPlayer?>(null) }
 
+    var showMediaLibraryPicker by remember { mutableStateOf(false) }
+
+    var mediaArtifacts by remember { mutableStateOf<List<AudioArtifact>>(emptyList())}
+
+    var mediaPreviewPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    var playingArtifactId by remember { mutableStateOf<Long?>(null) }
+
+    var isExistingMediaSelection by remember { mutableStateOf(false) }
+
+    var selectedAudioName by remember { mutableStateOf<String?>(null) }
+
     DisposableEffect(Unit) {
         onDispose {
             previewPlayer.value?.release()
             previewPlayer.value = null
+
+            mediaPreviewPlayer?.release()
+            mediaPreviewPlayer = null 
+            playingArtifactId = null 
         }
     }
 
@@ -116,6 +141,10 @@ fun AddAlarmScreen(
                 val copiedPath = audioStorage.copyAudio(uri)
 
                 selectedSoundPath = copiedPath
+                isExistingMediaSelection = false
+                pendingAudioArtifact = null
+                audioName = ""
+                selectedAudioName = null 
             }
             catch(e: SecurityException){
                 e.printStackTrace()
@@ -124,6 +153,13 @@ fun AddAlarmScreen(
     }
 
     var rootSize by remember {mutableStateOf(IntSize.Zero)}
+
+    LaunchedEffect(showMediaLibraryPicker) {
+        if(showMediaLibraryPicker){
+            val storage = AudioArtifactStorage(context)
+            mediaArtifacts = storage.loadAll()
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize().onGloballyPositioned{ coordinates -> 
@@ -206,6 +242,15 @@ fun AddAlarmScreen(
             Spacer(
                 modifier = Modifier.height(20.dp)
             )
+
+            OutlinedTextField(
+                value = alarmLabel,
+                onValueChange = { alarmLabel = it },
+                label = { Text("Alarm Label")},
+                placeholder = { Text("e.g. Wake up!") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
                     
             //Sound Card
                     
@@ -236,7 +281,11 @@ fun AddAlarmScreen(
                     } else {
 
                         Text(
-                            text = "Audio imported!✅",
+                            text = if(isExistingMediaSelection){
+                                "🎵 ${selectedAudioName ?: "Library audio"}"
+                            }else{
+                                "Audio imported! ✅"
+                            },
                             fontSize = 16.sp
                         )
 
@@ -285,41 +334,45 @@ fun AddAlarmScreen(
                             }
                         }
 
-                        OutlinedTextField(
-                            value = audioName,
-                            onValueChange = {
-                                audioName = it 
-                            },
-                            label = {
-                                Text("Name this audio")
-                            },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        if(!isExistingMediaSelection){
 
-                        Button(
-                            onClick = {
-                                val path = selectedSoundPath
-
-                                if(path!=null && audioName.isNotBlank()){
-                                    coroutineScope.launch {
-
-                                        val idStorage = IdStorage(context)
-
-                                        val artifactId = idStorage.nextAudioArtifactId()
-
-                                        pendingAudioArtifact = AudioArtifact(
-                                            id = artifactId,
-                                            name = audioName.trim(),
-                                            filePath = path 
-                                        )
+                            OutlinedTextField(
+                                value = audioName,
+                                onValueChange = {
+                                    audioName = it 
+                                },
+                                label = {
+                                    Text("Name this audio")
+                                },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+    
+                            Button(
+                                onClick = {
+                                    val path = selectedSoundPath
+    
+                                    if(path!=null && audioName.isNotBlank()){
+                                        coroutineScope.launch {
+    
+                                            val idStorage = IdStorage(context)
+    
+                                            val artifactId = idStorage.nextAudioArtifactId()
+    
+                                            pendingAudioArtifact = AudioArtifact(
+                                                id = artifactId,
+                                                name = audioName.trim(),
+                                                filePath = path 
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            enabled = audioName.isNotBlank()
-                        ){
-                            Text("Confirm")
+                                },
+                                enabled = audioName.isNotBlank()
+                            ){
+                                Text("Confirm")
+                            }
                         }
+
                     }
                                 
                     Spacer(
@@ -334,13 +387,20 @@ fun AddAlarmScreen(
                         }
                     ){
 
-                        Text(
-                            if(selectedSoundPath == null)
-                                "Choose Audio"
-                            else
-                                "Change Audio"
-                        )
-                    }               
+                        Text("📥 Import New Audio")
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(10.dp)
+                    )
+
+                    Button(
+                        onClick = {
+                            showMediaLibraryPicker = true 
+                        }
+                    ){
+                        Text("📚 Media Library")
+                    }
                 }
             }
 
@@ -351,7 +411,7 @@ fun AddAlarmScreen(
 
             Button(
                 onClick = {
-                    onSave(hour,minute,selectedSoundPath,pendingAudioArtifact)
+                    onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel)
                 },
                 modifier = Modifier.fillMaxWidth().height(58.dp)
             ){
@@ -370,6 +430,146 @@ fun AddAlarmScreen(
             
         }
         
+    }
+
+    if(showMediaLibraryPicker){
+        Dialog(
+            onDismissRequest = {
+                showMediaLibraryPicker = false
+            }
+        ){
+            Card(
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(0.75f),
+                shape = RoundedCornerShape(24.dp)
+            ){
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(20.dp)
+                ){
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(
+                            text = "🎶 Select Media 🎶",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold 
+                        )
+                        Spacer(
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = {
+                                showMediaLibraryPicker = false 
+                            }
+                        ){
+                            Text("✕")
+                        }
+                    }
+
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+
+                    if(mediaArtifacts.isEmpty()){
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center 
+                        ){
+                            Text(
+                                text = "No media available yet."
+                            )
+                        }
+                    }else{
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ){
+                            items(mediaArtifacts) { artifact -> 
+                                GlassCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    rootSize = rootSize
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                                    ){
+                                        Text(
+                                            text = "🎵 ${artifact.name}",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold 
+                                        )
+
+                                        Spacer(
+                                            modifier = Modifier.height(12.dp)
+                                        )
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ){
+                                            Button(
+                                                onClick = {
+                                                    if(playingArtifactId == artifact.id){
+                                                        mediaPreviewPlayer?.stop()
+                                                        mediaPreviewPlayer?.release()
+                                                        mediaPreviewPlayer = null 
+                                                        playingArtifactId = null 
+                                                    }else{
+                                                        mediaPreviewPlayer?.release()
+
+                                                        val player = MediaPlayer().apply {
+                                                            setDataSource(artifact.filePath)
+
+                                                            setOnCompletionListener {
+                                                                mediaPreviewPlayer?.release()
+                                                                mediaPreviewPlayer = null 
+                                                                playingArtifactId = null 
+                                                            }
+
+                                                            prepare()
+                                                            start()
+                                                        }
+
+                                                        mediaPreviewPlayer = player 
+                                                        playingArtifactId = artifact.id 
+                                                    }
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ){
+                                                Text(
+                                                    if(playingArtifactId == artifact.id)
+                                                        "⏹ Stop"
+                                                    else 
+                                                        "▶ Play"
+                                                )
+                                            }
+
+                                            Button(
+                                                onClick = {
+                                                    mediaPreviewPlayer?.stop()
+                                                    mediaPreviewPlayer?.release()
+                                                    mediaPreviewPlayer = null 
+                                                    playingArtifactId = null 
+
+                                                    selectedSoundPath = artifact.filePath
+                                                    selectedAudioName = artifact.name 
+                                                    isExistingMediaSelection = true 
+                                                    pendingAudioArtifact = null 
+                                                    audioName = ""
+                                                    showMediaLibraryPicker = false 
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            ){
+                                                Text("Select")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if(showTimePicker){

@@ -83,7 +83,7 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundPath,audioArtifact ->
+            onSave = { hour, minute, soundPath,audioArtifact, label ->
                 
                 coroutineScope.launch {
 
@@ -100,6 +100,7 @@ fun AlarmScreen() {
                         id = alarmId,
                         hour = hour,
                         minute = minute,
+                        label = label,
                         soundPath = soundPath
                     )
                     if (scheduler.canScheduleExactAlarms()){
@@ -202,7 +203,14 @@ fun AlarmScreen() {
                                                 fontSize = 32.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
-        
+                                            
+                                            if(alarm.label.isNotBlank()){
+                                                Text(
+                                                    text = alarm.label,
+                                                    fontSize = 16.sp
+                                                )
+                                            }
+
                                             Text(
                                                 text = if(alarm.soundPath!=null){
                                                     "🎶✨ Custom Sound ✨🎶"

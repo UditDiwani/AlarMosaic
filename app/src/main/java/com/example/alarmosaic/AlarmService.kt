@@ -48,6 +48,9 @@ class AlarmService : Service(){
             -1L
         )?: -1L
 
+        val alarmLabel = intent?.getStringExtra("ALARM_LABEL")
+
+
         val stopIntent = Intent(
             this, 
             AlarmService::class.java
@@ -67,6 +70,7 @@ class AlarmService : Service(){
             AlarmRingingActivity::class.java
         ).apply{
             putExtra("ALARM_ID",alarmId)
+            putExtra("ALARM_LABEL",alarmLabel)
             this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
         }

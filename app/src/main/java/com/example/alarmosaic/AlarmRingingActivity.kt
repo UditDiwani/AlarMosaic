@@ -60,6 +60,8 @@ class AlarmRingingActivity : ComponentActivity(){
             Locale.getDefault()
         ).format(Date())
 
+        val alarmLabel = intent.getStringExtra("ALARM_LABEL").orEmpty()
+
         ContextCompat.registerReceiver(
             this,
             stopReceiver,
@@ -71,6 +73,7 @@ class AlarmRingingActivity : ComponentActivity(){
 
             AlarmRingingScreen(
                 alarmTime = alarmTime,
+                alarmLabel = alarmLabel,
                 onStop = {
                     stopService(
                         android.content.Intent(
@@ -93,6 +96,7 @@ class AlarmRingingActivity : ComponentActivity(){
 @Composable
 fun AlarmRingingScreen(
     alarmTime: String,
+    alarmLabel: String,
     onStop: () -> Unit
 ){
     Box(
@@ -119,6 +123,17 @@ fun AlarmRingingScreen(
                 fontSize = 72.sp,
                 fontWeight = FontWeight.Bold
             )
+
+            if(alarmLabel.isNotBlank()){
+                Text(
+                    text = alarmLabel,
+                    fontSize = 22.sp 
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
 
             Spacer(
                 modifier = Modifier.height(12.dp)

@@ -66,6 +66,7 @@ class AlarmScheduler(
             AlarmReceiver::class.java
         ).apply {
             putExtra("ALARM_ID", alarm.id)
+            putExtra("ALARM_LABEL",alarm.label)
 
             if(alarm.soundPath != null){
                 putExtra("SOUND_PATH",alarm.soundPath)
