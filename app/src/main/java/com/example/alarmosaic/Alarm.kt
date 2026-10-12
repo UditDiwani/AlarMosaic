@@ -6,5 +6,6 @@ data class Alarm(
     val minute: Int,
     val label: String = "",
     val enabled: Boolean = true,
-    val soundPath: String? = null
+    val soundPath: String? = null,
+    val repeatDays: Set<Int> = emptySet()
 )

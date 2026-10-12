@@ -10,6 +10,9 @@ import java.util.Date
 
 import android.util.Log
 
+import kotlinx.coroutines.CoroutineScope 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch 
 
 class AlarmReceiver : BroadcastReceiver(){
     override fun onReceive(
@@ -51,5 +54,15 @@ class AlarmReceiver : BroadcastReceiver(){
 
         context.startForegroundService(serviceIntent)
 
+        val alarmStorage = AlarmStorage(context)
+        val alarmScheduler = AlarmScheduler(context)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val alarm = alarmStorage.getAlarm(alarmId)
+
+            if(alarm!=null && alarm.repeatDays.isNotEmpty()){
+                alarmScheduler.schedule(alarm)
+            }
+        }
     }
 }

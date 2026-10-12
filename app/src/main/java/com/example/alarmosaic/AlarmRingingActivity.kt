@@ -127,7 +127,7 @@ fun AlarmRingingScreen(
             if(alarmLabel.isNotBlank()){
                 Text(
                     text = alarmLabel,
-                    fontSize = 22.sp 
+                    fontSize = 48.sp 
                 )
 
                 Spacer(

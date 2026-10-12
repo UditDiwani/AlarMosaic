@@ -42,6 +42,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 
 import kotlinx.coroutines.launch
 
+import java.util.Calendar
+
 @Composable
 fun AlarmScreen() {
 
@@ -83,7 +85,7 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundPath,audioArtifact, label ->
+            onSave = { hour, minute, soundPath,audioArtifact, label,repeatDays ->
                 
                 coroutineScope.launch {
 
@@ -101,7 +103,8 @@ fun AlarmScreen() {
                         hour = hour,
                         minute = minute,
                         label = label,
-                        soundPath = soundPath
+                        soundPath = soundPath,
+                        repeatDays = repeatDays
                     )
                     if (scheduler.canScheduleExactAlarms()){
                         val updatedAlarms = alarms + newAlarm
@@ -212,6 +215,10 @@ fun AlarmScreen() {
                                             }
 
                                             Text(
+                                                text = formatRepeatSchedule(alarm.repeatDays)
+                                            )
+
+                                            Text(
                                                 text = if(alarm.soundPath!=null){
                                                     "🎶✨ Custom Sound ✨🎶"
                                                 }else{
@@ -312,5 +319,50 @@ fun AlarmScreen() {
                 }
             }
         )
+    }
+}
+
+fun formatRepeatSchedule(repeatDays: Set<Int>): String {
+    if(repeatDays.isEmpty()){
+        return "Once"
+    }
+
+    val allDays = setOf(
+        Calendar.MONDAY,
+        Calendar.TUESDAY,
+        Calendar.WEDNESDAY,
+        Calendar.THURSDAY,
+        Calendar.FRIDAY,
+        Calendar.SATURDAY,
+        Calendar.SUNDAY
+    )
+
+    if(repeatDays == allDays){
+        return "Every Day"
+    }
+
+    val dayNames = mapOf(
+        Calendar.MONDAY to "Mon",
+        Calendar.TUESDAY to "Tue",
+        Calendar.WEDNESDAY to "Wed",
+        Calendar.THURSDAY to "Thu",
+        Calendar.FRIDAY to "Fri",
+        Calendar.SATURDAY to "Sat",
+        Calendar.SUNDAY to "Sun"
+    )
+
+    return repeatDays.sortedBy { day ->
+        when (day) {
+            Calendar.MONDAY -> 0
+            Calendar.TUESDAY -> 1
+            Calendar.WEDNESDAY -> 2
+            Calendar.THURSDAY -> 3
+            Calendar.FRIDAY -> 4
+            Calendar.SATURDAY -> 5
+            Calendar.SUNDAY -> 6
+            else -> 7
+        }
+    }.joinToString(" • ") { day ->
+        dayNames[day] ?: ""
     }
 }

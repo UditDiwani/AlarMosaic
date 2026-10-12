@@ -21,29 +21,60 @@ class AlarmScheduler(
 
     fun schedule(alarm: Alarm){
 
-        val calendar = Calendar.getInstance().apply {
+        val triggerTime = getNextTriggerTime(alarm)
+
+        val pendingIntent = getPendingIntent(alarm)
+
+        Log.d(
+            "AlarMosaicAlarm",
+            "ALARM SCHEDULED FOR ${Calendar.getInstance().apply { 
+                timeInMillis = triggerTime
+            }.time}"
+        )
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerTime,
+            pendingIntent
+        )
+    }
+
+    private fun getNextTriggerTime(alarm: Alarm): Long {
+        val now = Calendar.getInstance()
+
+        val candidate = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, alarm.hour)
             set(Calendar.MINUTE, alarm.minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
 
-        if(calendar.timeInMillis <= System.currentTimeMillis()){
-            calendar.add(Calendar.DAY_OF_YEAR,1)
+        //One-time
+        if(alarm.repeatDays.isEmpty()){
+            if(candidate.timeInMillis <= System.currentTimeMillis()){
+                candidate.add(Calendar.DAY_OF_YEAR,1)
+            }
+
+            return candidate.timeInMillis
         }
+        //Repeating Alarm
+        for (daysAhaed in 0..6){
+            val dayCandidate = candidate.clone() as Calendar
 
-        val pendingIntent = getPendingIntent(alarm)
+            dayCandidate.add(
+                Calendar.DAY_OF_YEAR,
+                daysAhaed
+            )
 
-        Log.d(
-            "AlarMosaicAlarm",
-            "ALARM SCHEDULED FOR ${calendar.time}"
-        )
+            val weekday = dayCandidate.get(Calendar.DAY_OF_WEEK)
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent
-        )
+            if(weekday in alarm.repeatDays && dayCandidate.timeInMillis > now.timeInMillis){
+                return dayCandidate.timeInMillis
+            }
+        }
+        //Just-in-case
+        candidate.add(Calendar.DAY_OF_YEAR,7)
+        return candidate.timeInMillis
     }
     
     fun canScheduleExactAlarms(): Boolean {

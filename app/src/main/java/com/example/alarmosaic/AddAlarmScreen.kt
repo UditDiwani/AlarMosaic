@@ -31,6 +31,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card 
+import androidx.compose.material3.FilterChip
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
@@ -58,12 +59,13 @@ import android.content.Intent
 import android.media.MediaPlayer
 import com.example.alarmosaic.AudioArtifact
 import java.awt.Dialog
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddAlarmScreen(
     onBack: () -> Unit,
-    onSave: (Int, Int, String?,AudioArtifact?, String) -> Unit
+    onSave: (Int, Int, String?,AudioArtifact?, String,Set<Int>) -> Unit
 ){
     BackHandler{
         onBack()
@@ -89,6 +91,8 @@ fun AddAlarmScreen(
     var audioName by remember { mutableStateOf("") }
 
     var alarmLabel by remember { mutableStateOf("") }
+
+    var repeatDays by remember { mutableStateOf<Set<Int>>(emptySet()) }
 
     var pendingAudioArtifact by remember {
         mutableStateOf<AudioArtifact?>(null)
@@ -251,6 +255,27 @@ fun AddAlarmScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            Text("Repeat")
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
+
+            RepeatDaySelector(
+                selectedDays = repeatDays,
+                onDayToggle = { day -> 
+                    repeatDays = if (day in repeatDays){
+                        repeatDays - day
+                    }else{
+                        repeatDays + day 
+                    }
+                }
+            ) 
                     
             //Sound Card
                     
@@ -411,7 +436,7 @@ fun AddAlarmScreen(
 
             Button(
                 onClick = {
-                    onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel)
+                    onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel,repeatDays)
                 },
                 modifier = Modifier.fillMaxWidth().height(58.dp)
             ){
@@ -606,6 +631,39 @@ fun AddAlarmScreen(
         ){
             TimePicker(
                 state = timePickerState
+            )
+        }
+    }
+}
+
+@Composable
+fun RepeatDaySelector(
+    selectedDays: Set<Int>,
+    onDayToggle: (Int) -> Unit 
+){
+    val days = listOf(
+        Calendar.MONDAY to "M",
+        Calendar.TUESDAY to "T", 
+        Calendar.WEDNESDAY to "W",
+        Calendar.THURSDAY to "T",
+        Calendar.FRIDAY to "F",
+        Calendar.SATURDAY to "S",
+        Calendar.SUNDAY to "S" 
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ){
+        days.forEach { (day, label ) -> 
+            FilterChip(
+                selected = day in selectedDays,
+                onClick = {
+                    onDayToggle(day)
+                },
+                label = {
+                    Text(label)
+                }
             )
         }
     }

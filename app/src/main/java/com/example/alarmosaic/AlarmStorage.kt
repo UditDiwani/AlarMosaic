@@ -20,7 +20,7 @@ class AlarmStorage(
 
     suspend fun saveAlarms( alarms: List<Alarm>){
         val data = alarms.joinToString("|") { alarm -> 
-            "${alarm.id},${alarm.hour},${alarm.minute},${alarm.label},${alarm.enabled},${alarm.soundPath ?: ""}"
+            "${alarm.id},${alarm.hour},${alarm.minute},${alarm.label},${alarm.enabled},${alarm.soundPath ?: ""},${alarm.repeatDays.joinToString(";")}"
         }
         
         context.alarmDataStore.edit { preferences -> 
@@ -44,9 +44,19 @@ class AlarmStorage(
                 enabled = parts.getOrNull(4)?.toBoolean() ?: true,
                 soundPath = parts.getOrNull(4)?.takeIf{
                     it.isNotEmpty()
-                }
+                },
+                repeatDays = parts.getOrNull(6)
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.split(";")
+                    ?.map { it.toInt() }
+                    ?.toSet()
+                    ?: emptySet()
             )
         } 
+    }
+
+    suspend fun getAlarm(id: Long): Alarm? {
+        return loadAlarms().find{ it.id == id }
     }
 
     suspend fun delete(id: Long){
