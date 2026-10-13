@@ -194,11 +194,12 @@ fun AlarmScreen() {
         
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        // horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ){
         
                                         Column(
+                                            modifier = Modifier.weight(1f),
                                             verticalArrangement = Arrangement.Center
                                         ){
                                             Text(
@@ -228,43 +229,50 @@ fun AlarmScreen() {
                                                 fontWeight = FontWeight.Bold
                                             )
                                         }
-        
-                                        Switch(
-                                            checked = alarm.enabled,
-                                            onCheckedChange = { enabled -> 
-            
-                                                if(enabled){
-                                                    scheduler.schedule(alarm)
-                                                }else{
-                                                    scheduler.cancel(alarm)
-                                                }
-            
-                                                val updatedAlarms = alarms.map { currentAlarm -> 
-                                                    if(currentAlarm.id == alarm.id){
-                                                        alarm.copy(enabled = enabled)
+
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ){
+                                            Switch(
+                                                checked = alarm.enabled,
+                                                onCheckedChange = { enabled -> 
+                
+                                                    if(enabled){
+                                                        scheduler.schedule(alarm)
                                                     }else{
-                                                        currentAlarm
+                                                        scheduler.cancel(alarm)
+                                                    }
+                
+                                                    val updatedAlarms = alarms.map { currentAlarm -> 
+                                                        if(currentAlarm.id == alarm.id){
+                                                            alarm.copy(enabled = enabled)
+                                                        }else{
+                                                            currentAlarm
+                                                        }
+                                                    }
+                                                    alarms = updatedAlarms
+                
+                                                    coroutineScope.launch { 
+                                                        storage.saveAlarms(updatedAlarms)
                                                     }
                                                 }
-                                                alarms = updatedAlarms
-            
-                                                coroutineScope.launch { 
-                                                    storage.saveAlarms(updatedAlarms)
+                                            )
+                                            Button(
+                                                onClick = {
+                
+                                                    scheduler.cancel(alarm)
+                                                    coroutineScope.launch{
+                                                        storage.delete(alarm.id)
+                                                        alarms = storage.loadAlarms()
+                                                    }
                                                 }
+                                            ){
+                                                Text("Delete")
                                             }
-                                        )
-                                        Button(
-                                            onClick = {
-            
-                                                scheduler.cancel(alarm)
-                                                coroutineScope.launch{
-                                                    storage.delete(alarm.id)
-                                                    alarms = storage.loadAlarms()
-                                                }
-                                            }
-                                        ){
-                                            Text("Delete")
+
                                         }
+        
                                     }
                                 }
         
