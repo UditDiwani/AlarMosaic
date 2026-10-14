@@ -40,6 +40,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 
+import androidx.lifecycle.Lifecycle 
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+
 import kotlinx.coroutines.launch
 
 import java.util.Calendar
@@ -70,6 +74,37 @@ fun AlarmScreen() {
 
     val scheduler = remember{
         AlarmScheduler(context)
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(lifecycleOwner){
+        val observer = LifecycleEventObserver { _,event -> 
+            if(event == Lifecycle.Event.ON_RESUME){
+                coroutineScope.launch {
+                    val alarm = pendingAlarm
+
+                    if(alarm != null && scheduler.canScheduleExactAlarms()){
+                        val updatedAlarms = alarms + alarm
+
+                        alarms = updatedAlarms
+                        storage.saveAlarms(updatedAlarms)
+                        scheduler.schedule(alarm)
+
+                        pendingAlarm = null 
+                        showAddAlarm = false 
+                    }
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        try {
+            kotlinx.coroutines.awaitCancellation()
+        }finally{
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     var rootSize by remember {
@@ -238,23 +273,24 @@ fun AlarmScreen() {
                                                 checked = alarm.enabled,
                                                 onCheckedChange = { enabled -> 
                 
-                                                    if(enabled){
-                                                        scheduler.schedule(alarm)
-                                                    }else{
-                                                        scheduler.cancel(alarm)
-                                                    }
-                
                                                     val updatedAlarms = alarms.map { currentAlarm -> 
                                                         if(currentAlarm.id == alarm.id){
-                                                            alarm.copy(enabled = enabled)
+                                                            currentAlarm.copy(enabled = enabled)
                                                         }else{
                                                             currentAlarm
                                                         }
                                                     }
                                                     alarms = updatedAlarms
-                
+
+                                                    val updated = updatedAlarms.first { it.id == alarm.id }
+
                                                     coroutineScope.launch { 
                                                         storage.saveAlarms(updatedAlarms)
+                                                        if(updated.enabled){
+                                                            scheduler.schedule(updated)
+                                                        }else{
+                                                            scheduler.cancel(updated)
+                                                        }
                                                     }
                                                 }
                                             )

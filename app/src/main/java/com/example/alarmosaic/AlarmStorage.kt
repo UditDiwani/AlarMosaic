@@ -42,7 +42,7 @@ class AlarmStorage(
                 minute = parts[2].toInt(),
                 label = parts.getOrNull(3) ?: "",
                 enabled = parts.getOrNull(4)?.toBoolean() ?: true,
-                soundPath = parts.getOrNull(4)?.takeIf{
+                soundPath = parts.getOrNull(5)?.takeIf{
                     it.isNotEmpty()
                 },
                 repeatDays = parts.getOrNull(6)

@@ -21,6 +21,16 @@ class AlarmScheduler(
 
     fun schedule(alarm: Alarm){
 
+        if(!alarm.enabled){
+            cancel(alarm)
+
+            Log.d(
+                "AlarMosaicAlarm",
+                "SKIPPING DISABLED ALARM: ${alarm.id}"
+            )
+            return 
+        }
+
         val triggerTime = getNextTriggerTime(alarm)
 
         val pendingIntent = getPendingIntent(alarm)
