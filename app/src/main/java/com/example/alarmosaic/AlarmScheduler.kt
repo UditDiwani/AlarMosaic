@@ -108,6 +108,7 @@ class AlarmScheduler(
         ).apply {
             putExtra("ALARM_ID", alarm.id)
             putExtra("ALARM_LABEL",alarm.label)
+            putExtra("ALARM_TIME",String.format("%02d : %02d",alarm.hour,alarm.minute))
 
             if(alarm.soundPath != null){
                 putExtra("SOUND_PATH",alarm.soundPath)

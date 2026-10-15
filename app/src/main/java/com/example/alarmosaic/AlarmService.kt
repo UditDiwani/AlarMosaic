@@ -48,6 +48,8 @@ class AlarmService : Service(){
             -1L
         )?: -1L
 
+        val alarmTime = intent?.getStringExtra("ALARM_TIME")
+
         val alarmLabel = intent?.getStringExtra("ALARM_LABEL")
 
 
@@ -71,6 +73,7 @@ class AlarmService : Service(){
         ).apply{
             putExtra("ALARM_ID",alarmId)
             putExtra("ALARM_LABEL",alarmLabel)
+            putExtra("ALARM_TIME",alarmTime)
             this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
         }

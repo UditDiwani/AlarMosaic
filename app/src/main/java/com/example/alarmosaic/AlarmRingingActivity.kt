@@ -55,10 +55,7 @@ class AlarmRingingActivity : ComponentActivity(){
             )
         }
 
-        val alarmTime = SimpleDateFormat(
-            "HH:mm",
-            Locale.getDefault()
-        ).format(Date())
+        val alarmTime = intent.getStringExtra("ALARM_TIME")
 
         val alarmLabel = intent.getStringExtra("ALARM_LABEL").orEmpty()
 
@@ -95,7 +92,7 @@ class AlarmRingingActivity : ComponentActivity(){
 
 @Composable
 fun AlarmRingingScreen(
-    alarmTime: String,
+    alarmTime: String?,
     alarmLabel: String,
     onStop: () -> Unit
 ){
@@ -119,7 +116,7 @@ fun AlarmRingingScreen(
             )
 
             Text(
-                text = alarmTime,
+                text = alarmTime ?: "--:--",
                 fontSize = 72.sp,
                 fontWeight = FontWeight.Bold
             )

@@ -32,6 +32,10 @@ class AlarmReceiver : BroadcastReceiver(){
         val alarmLabel = intent.getStringExtra(
             "ALARM_LABEL"
         )
+        
+        val alarmTime = intent.getStringExtra(
+            "ALARM_TIME"
+        )
 
         val time = SimpleDateFormat(
             "HH:mm:ss",
@@ -46,6 +50,7 @@ class AlarmReceiver : BroadcastReceiver(){
         val serviceIntent = Intent(context, AlarmService::class.java).apply {
             putExtra("ALARM_ID",alarmId)
             putExtra("ALARM_LABEL",alarmLabel)
+            putExtra("ALARM_TIME",alarmTime)
 
             if(soundPath!=null){
                 putExtra("SOUND_PATH",soundPath)

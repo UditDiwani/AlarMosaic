@@ -3,6 +3,7 @@ package com.example.alarmosaic
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image 
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.Button
@@ -53,15 +56,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.window.Dialog
 
 import kotlinx.coroutines.launch
 
+import coil.compose.AsyncImage
+
 import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri 
+
 import com.example.alarmosaic.AudioArtifact
 import java.awt.Dialog
 import java.util.Calendar
+import kotlin.contracts.contract
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,6 +167,19 @@ fun AddAlarmScreen(
             catch(e: SecurityException){
                 e.printStackTrace()
             }
+        }
+    }
+
+    var selectedBackgroundUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ){
+        uri ->
+        if(uri != null){
+            selectedBackgroundUri = uri
         }
     }
 
@@ -448,6 +470,25 @@ fun AddAlarmScreen(
                             }
                         ){
                             Text("📚 Media Library")
+                        }
+                        Button(
+                            onClick = {
+                                imagePicker.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            }
+                        ){
+                            Text("🖼️ Choose Background")
+                        }
+                        selectedBackgroundUri?.let { uri ->
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = "Selected alarm background",
+                                modifier = Modifier.fillMaxWidth().height(180.dp),
+                                contentScale = ContentScale.Crop
+                            )
                         }
                     }
                 }
