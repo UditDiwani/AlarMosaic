@@ -52,6 +52,7 @@ class AlarmService : Service(){
 
         val alarmLabel = intent?.getStringExtra("ALARM_LABEL")
 
+        val backgroundPath = intent?.getStringExtra("BACKGROUND_PATH")
 
         val stopIntent = Intent(
             this, 
@@ -74,6 +75,7 @@ class AlarmService : Service(){
             putExtra("ALARM_ID",alarmId)
             putExtra("ALARM_LABEL",alarmLabel)
             putExtra("ALARM_TIME",alarmTime)
+            putExtra("BACKGROUND_PATH",backgroundPath)
             this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
         }

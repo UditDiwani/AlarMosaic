@@ -120,7 +120,7 @@ fun AlarmScreen() {
             onBack = {
                 showAddAlarm = false
             },
-            onSave = { hour, minute, soundPath,audioArtifact, label,repeatDays ->
+            onSave = { hour, minute, soundPath,audioArtifact, label,repeatDays,backgroundPath ->
                 
                 coroutineScope.launch {
 
@@ -139,7 +139,8 @@ fun AlarmScreen() {
                         minute = minute,
                         label = label,
                         soundPath = soundPath,
-                        repeatDays = repeatDays
+                        repeatDays = repeatDays,
+                        backgroundPath = backgroundPath
                     )
                     if (scheduler.canScheduleExactAlarms()){
                         val updatedAlarms = alarms + newAlarm

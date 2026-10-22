@@ -37,6 +37,10 @@ class AlarmReceiver : BroadcastReceiver(){
             "ALARM_TIME"
         )
 
+        val backgroundPath = intent.getStringExtra(
+            "BACKGROUND_PATH"
+        )
+
         val time = SimpleDateFormat(
             "HH:mm:ss",
             Locale.getDefault()
@@ -51,6 +55,7 @@ class AlarmReceiver : BroadcastReceiver(){
             putExtra("ALARM_ID",alarmId)
             putExtra("ALARM_LABEL",alarmLabel)
             putExtra("ALARM_TIME",alarmTime)
+            putExtra("BACKGROUND_PATH",backgroundPath)
 
             if(soundPath!=null){
                 putExtra("SOUND_PATH",soundPath)

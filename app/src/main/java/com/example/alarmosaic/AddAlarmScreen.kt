@@ -37,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Card 
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.setValue
@@ -76,7 +77,7 @@ import kotlin.contracts.contract
 @Composable
 fun AddAlarmScreen(
     onBack: () -> Unit,
-    onSave: (Int, Int, String?,AudioArtifact?, String,Set<Int>) -> Unit
+    onSave: (Int, Int, String?,AudioArtifact?, String,Set<Int>,String?) -> Unit
 ){
     BackHandler{
         onBack()
@@ -126,6 +127,8 @@ fun AddAlarmScreen(
     var isExistingMediaSelection by remember { mutableStateOf(false) }
 
     var selectedAudioName by remember { mutableStateOf<String?>(null) }
+
+    var backgroundError by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -490,6 +493,12 @@ fun AddAlarmScreen(
                                 contentScale = ContentScale.Crop
                             )
                         }
+                        backgroundError?.let { error -> 
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error 
+                            )
+                        }
                     }
                 }
             }
@@ -500,7 +509,19 @@ fun AddAlarmScreen(
             ){
                 Button(
                     onClick = {
-                        onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel,repeatDays)
+                        val backgroundPath = try {
+                            selectedBackgroundUri?.let { uri -> 
+                                ImageStorage(context).copyImage(uri)
+                            }
+                        } catch (exception: Exception){
+                            backgroundError = "Couldn't save the background image. Please try again"
+                            null
+                        }
+
+                        if(selectedBackgroundUri == null || backgroundPath != null){
+                            backgroundError = null 
+                            onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel,repeatDays,backgroundPath)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(58.dp)
                 ){

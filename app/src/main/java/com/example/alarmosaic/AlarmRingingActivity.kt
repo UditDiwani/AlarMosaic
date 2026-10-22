@@ -27,10 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
 
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.File
+
+import coil.compose.AsyncImage
 
 class AlarmRingingActivity : ComponentActivity(){
 
@@ -59,6 +63,8 @@ class AlarmRingingActivity : ComponentActivity(){
 
         val alarmLabel = intent.getStringExtra("ALARM_LABEL").orEmpty()
 
+        val backgroundPath = intent.getStringExtra("BACKGROUND_PATH")
+
         ContextCompat.registerReceiver(
             this,
             stopReceiver,
@@ -71,6 +77,7 @@ class AlarmRingingActivity : ComponentActivity(){
             AlarmRingingScreen(
                 alarmTime = alarmTime,
                 alarmLabel = alarmLabel,
+                backgroundPath = backgroundPath,
                 onStop = {
                     stopService(
                         android.content.Intent(
@@ -94,12 +101,22 @@ class AlarmRingingActivity : ComponentActivity(){
 fun AlarmRingingScreen(
     alarmTime: String?,
     alarmLabel: String,
+    backgroundPath: String?,
     onStop: () -> Unit
 ){
     Box(
         modifier = Modifier.fillMaxSize()
     ){
-        SkyBackground()
+        if(backgroundPath != null && File(backgroundPath).isFile){
+            AsyncImage(
+                model = File(backgroundPath),
+                contentDescription = "Alarm background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            SkyBackground()
+        }
 
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),

@@ -20,7 +20,14 @@ class AlarmStorage(
 
     suspend fun saveAlarms( alarms: List<Alarm>){
         val data = alarms.joinToString("|") { alarm -> 
-            "${alarm.id},${alarm.hour},${alarm.minute},${alarm.label},${alarm.enabled},${alarm.soundPath ?: ""},${alarm.repeatDays.joinToString(";")}"
+            "${alarm.id}," +
+            "${alarm.hour}," +
+            "${alarm.minute}," +
+            "${alarm.label}," +
+            "${alarm.enabled}," +
+            "${alarm.soundPath ?: ""}," +
+            "${alarm.repeatDays.joinToString(";")}," +
+            "${alarm.backgroundPath ?: ""}," 
         }
         
         context.alarmDataStore.edit { preferences -> 
@@ -50,7 +57,10 @@ class AlarmStorage(
                     ?.split(";")
                     ?.map { it.toInt() }
                     ?.toSet()
-                    ?: emptySet()
+                    ?: emptySet(),
+                backgroundPath = parts.getOrNull(7)?.takeIf {
+                    it.isNotEmpty()
+                }
             )
         } 
     }
