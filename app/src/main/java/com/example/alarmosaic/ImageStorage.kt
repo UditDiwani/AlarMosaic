@@ -56,4 +56,22 @@ class ImageStorage(
             throw exception
         }
     }
+
+    fun listImages(): List<File> {
+        return backgroundsDirectory.listFiles()?.filter { file ->
+            file.isFile && 
+            file.extension.lowercase() in setOf(
+                "jpg",
+                "jpeg",
+                "webp",
+                "gif",
+                "avif",
+                "heic",
+                "heif",
+                "img"
+            )
+        }
+        ?.sortedByDescending { it.lastModified() }
+        ?: emptyList()
+    }
 }

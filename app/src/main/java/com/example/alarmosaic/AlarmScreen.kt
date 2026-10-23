@@ -12,6 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+
 
 
 import androidx.compose.ui.Modifier
@@ -54,6 +57,10 @@ fun AlarmScreen() {
     var showAddAlarm by remember { mutableStateOf(false) }
     
     var showMediaLibrary by remember { 
+        mutableStateOf(false)
+    }
+
+    var showImageLibrary by remember { 
         mutableStateOf(false)
     }
 
@@ -170,6 +177,14 @@ fun AlarmScreen() {
         )
     }
 
+    else if (showImageLibrary){
+        ImageLibraryScreen(
+            onBack = {
+                showImageLibrary = false 
+            }
+        )
+    }
+
     else{
 
         Box(
@@ -180,20 +195,38 @@ fun AlarmScreen() {
 
         ){
             SkyBackground()
-            Button(
-                onClick = {
-                    showMediaLibrary = true
-                }
+            Row (
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ){
-                Text("🎵 MEDIA LIBRARY")
+                Button(
+                    onClick = {
+                        showMediaLibrary = true
+                    }
+                ){
+                    Text("🎵 MEDIA LIBRARY")
+                }
+
+                Text(
+                    text = "AlarMosaic"
+                )
+
+                Button(
+                    onClick = {
+                        showImageLibrary = true 
+                    }
+                ){
+                    Text("🖼️ IMAGE LIBRARY ")
+                }
             }
+            Spacer(
+                modifier = Modifier.height(1.dp)
+            )
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ){
-                Text(
-                    text = "AlarMosaic"
-                )
+                
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
