@@ -74,4 +74,14 @@ class ImageStorage(
         ?.sortedByDescending { it.lastModified() }
         ?: emptyList()
     }
+
+    fun deleteImage(path: String) : Boolean {
+        val file = File(path) 
+
+        if(!file.exists()) {
+            return false 
+        }
+
+        return file.delete()
+    }
 }

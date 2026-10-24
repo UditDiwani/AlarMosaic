@@ -181,6 +181,45 @@ fun AlarmScreen() {
         ImageLibraryScreen(
             onBack = {
                 showImageLibrary = false 
+            },
+            alarms = alarms,
+            onDeleteAlarm = { alarmToDelete -> 
+                coroutineScope.launch {
+                    scheduler.cancel(alarmToDelete)
+                    storage.delete(alarmToDelete.id)
+                    alarms = storage.loadAlarms()
+                }
+            },
+            onDeleteImage = { imagePath, deleteAnyway -> 
+                val currentAlarms = storage.loadAlarms()
+                val affected = currentAlarms.filter {
+                    it.backgroundPath == imagePath
+                }
+
+                if(affected.isNotEmpty() && !deleteAnyway){
+                    false
+                } else {
+                    val updatedAlarms = currentAlarms.map { alarm -> 
+                        if(alarm.backgroundPath == imagePath){
+                            alarm.copy(backgroundPath = null)
+                        }else{
+                            alarm
+                        }
+                    }
+
+                    if(affected.isNotEmpty()){
+                        storage.saveAlarms(updatedAlarms)
+                        alarms = updatedAlarms
+                    }
+
+                    val deleted = ImageStorage(context).deleteImage(imagePath)
+
+                    if(deleted){
+                        alarms = storage.loadAlarms()
+                    }
+                    
+                    deleted
+                }
             }
         )
     }
@@ -204,7 +243,7 @@ fun AlarmScreen() {
                         showMediaLibrary = true
                     }
                 ){
-                    Text("🎵 MEDIA LIBRARY")
+                    Text("🎵MEDIA LIBRARY")
                 }
 
                 Text(
@@ -216,11 +255,11 @@ fun AlarmScreen() {
                         showImageLibrary = true 
                     }
                 ){
-                    Text("🖼️ IMAGE LIBRARY ")
+                    Text("🖼️IMAGE LIBRARY")
                 }
             }
             Spacer(
-                modifier = Modifier.height(1.dp)
+                modifier = Modifier.height(5.dp)
             )
             Column(
                 modifier = Modifier.fillMaxSize(),

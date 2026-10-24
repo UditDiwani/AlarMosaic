@@ -71,6 +71,7 @@ import android.net.Uri
 import com.example.alarmosaic.AudioArtifact
 import java.awt.Dialog
 import java.util.Calendar
+import java.io.File
 import kotlin.contracts.contract
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,12 +178,17 @@ fun AddAlarmScreen(
         mutableStateOf<Uri?>(null)
     }
 
+    var showImageLibrary by remember { mutableStateOf(false) }
+
+    var selectedBackgroundPath by remember { mutableStateOf<String?>(null) }
+
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ){
         uri ->
         if(uri != null){
             selectedBackgroundUri = uri
+            selectedBackgroundPath = null 
         }
     }
 
@@ -195,351 +201,388 @@ fun AddAlarmScreen(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize().onGloballyPositioned{ coordinates -> 
-            rootSize = coordinates.size
-        }
-    ){
-        SkyBackground()
-
-        Column(
-            modifier = Modifier.fillMaxSize().padding(
-                horizontal = 20.dp,
-                vertical = 24.dp
-            ),
+    if(showImageLibrary){
+        ImageLibraryScreen(
+            onBack = { 
+                showImageLibrary = false 
+            },
+            onSelectImage = { path -> 
+                selectedBackgroundPath = path 
+                selectedBackgroundUri = null 
+                showImageLibrary = false 
+            }
+        )
+    } else {
+        Box(
+            modifier = Modifier.fillMaxSize().onGloballyPositioned{ coordinates -> 
+                rootSize = coordinates.size
+            }
         ){
-            //Scrollable content
+            SkyBackground()
+
             Column(
-                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = 12.dp,bottom = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxSize().padding(
+                    horizontal = 20.dp,
+                    vertical = 24.dp
+                ),
             ){
-                //Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                //Scrollable content
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top = 12.dp,bottom = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ){
+                    //Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        TextButton(
+                            onClick = onBack
+                        ){
+                            Text(
+                                text = "<- Back",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+        
+                        Spacer(
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "ADD ALARM",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(
+                            modifier = Modifier.width(16.dp)
+                        )
+                    }
+        
+                    Spacer(
+                        modifier = Modifier.height(36.dp)
+                    )
+        
+                    //Time Card
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        rootSize = rootSize
+                    ){
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(
+                                vertical = 28.dp,
+                                horizontal = 20.dp
+                            ),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Spacer(
+                                modifier = Modifier.height(40.dp)
+                            )
+        
+                            Text(
+                                text = String.format("%02d : %02d", hour, minute),
+                                fontSize = 64.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable {
+                                    showTimePicker = true
+                                }
+                            )
+                                
+                            Text(
+                                text = "Tap to choose time",
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                            
+                    Spacer(
+                        modifier = Modifier.height(20.dp)
+                    )
+        
+                    OutlinedTextField(
+                        value = alarmLabel,
+                        onValueChange = { alarmLabel = it },
+                        label = { Text("Alarm Label")},
+                        placeholder = { Text("e.g. Wake up!") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+        
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+        
+                    Text("Repeat")
+        
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+        
+                    RepeatDaySelector(
+                        selectedDays = repeatDays,
+                        onDayToggle = { day -> 
+                            repeatDays = if (day in repeatDays){
+                                repeatDays - day
+                            }else{
+                                repeatDays + day 
+                            }
+                        }
+                    ) 
+                            
+                    //Sound Card
+                            
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        rootSize = rootSize
+                    ){
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(22.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ){
+                            Text(
+                                text = "🎵 Alarm Sound 🎵",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                                
+                            Spacer(
+                                modifier = Modifier.height(12.dp)
+                            )
+                                    
+                            if(selectedSoundPath == null){
+        
+                                Text(
+                                    text = "Default sound",
+                                    fontSize = 16.sp
+                                )
+                            } else {
+        
+                                Text(
+                                    text = if(isExistingMediaSelection){
+                                        "🎵 ${selectedAudioName ?: "Library audio"}"
+                                    }else{
+                                        "Audio imported! ✅"
+                                    },
+                                    fontSize = 16.sp
+                                )
+        
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ){
+                                    Button(
+                                        onClick = {
+                                            if(isPlaying){
+                                                previewPlayer.value?.pause()
+                                                isPlaying = false
+                                            }else{
+                                                previewPlayer.value?.release()
+        
+                                                val player = MediaPlayer().apply {
+                                                    setDataSource(selectedSoundPath)
+        
+                                                    setOnCompletionListener {
+                                                        isPlaying = false
+                                                    }
+        
+                                                    prepare()
+                                                    start()
+                                                }
+        
+                                                previewPlayer.value = player
+                                                isPlaying = true 
+                                            }
+                                        }
+                                    ){
+                                        Text(
+                                            text = if(isPlaying) "⏸ Pause" else "▶ Play"
+                                        )
+                                    }
+        
+                                    Button(
+                                        onClick = {
+                                            previewPlayer.value?.stop()
+                                            previewPlayer.value?.release()
+                                            previewPlayer.value = null 
+                                            isPlaying = false 
+                                        }
+                                    ){
+                                        Text("⏹ Stop")
+                                    }
+                                }
+        
+                                if(!isExistingMediaSelection){
+        
+                                    OutlinedTextField(
+                                        value = audioName,
+                                        onValueChange = {
+                                            audioName = it 
+                                            pendingAudioArtifact = null 
+                                            audioNameConfirmed = false 
+                                        },
+                                        label = {
+                                            Text("Name this audio")
+                                        },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+            
+                                    Button(
+                                        onClick = {
+                                            val path = selectedSoundPath
+            
+                                            if(path!=null && audioName.isNotBlank()){
+                                                coroutineScope.launch {
+            
+                                                    val idStorage = IdStorage(context)
+            
+                                                    val artifactId = idStorage.nextAudioArtifactId()
+            
+                                                    pendingAudioArtifact = AudioArtifact(
+                                                        id = artifactId,
+                                                        name = audioName.trim(),
+                                                        filePath = path 
+                                                    )
+
+                                                    audioNameConfirmed = true 
+                                                }
+                                            }
+                                        },
+                                        enabled = audioName.isNotBlank()
+                                    ){
+                                        Text("Confirm")
+                                    }
+
+                                    if(audioNameConfirmed && pendingAudioArtifact!=null){
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "✓ Confirmed",
+                                            color = Color(0xFF2E7D32),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+        
+                            }
+                                        
+                            Spacer(
+                                modifier = Modifier.height(16.dp)
+                            )
+                                            
+                            Button(
+                                onClick = {
+                                    audioPicker.launch(
+                                        arrayOf("audio/*")
+                                    )
+                                }
+                            ){
+        
+                                Text("📥 Import New Audio")
+                            }
+        
+                            Spacer(
+                                modifier = Modifier.height(10.dp)
+                            )
+        
+                            Button(
+                                onClick = {
+                                    showMediaLibraryPicker = true 
+                                }
+                            ){
+                                Text("📚 Media Library")
+                            }
+                            Button(
+                                onClick = {
+                                    imagePicker.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                }
+                            ){
+                                Text("🖼️ Choose New Background")
+                            }
+
+                            Spacer(
+                                modifier = Modifier.height(8.dp)
+                            )
+
+                            Button(
+                                onClick = {
+                                    showImageLibrary = true
+                                }
+                            ){
+                                Text("📚 Browse Image Library")
+                            }
+
+                            if(selectedBackgroundPath != null){
+                                AsyncImage(
+                                    model = File(selectedBackgroundPath!!),
+                                    contentDescription = "Selected library background",
+                                    modifier = Modifier.fillMaxWidth().height(180.dp),
+                                    contentScale = ContentScale.Crop 
+                                )
+                            } else {
+                                selectedBackgroundUri?.let { uri ->
+                                    AsyncImage(
+                                        model = uri,
+                                        contentDescription = "Selected alarm background",
+                                        modifier = Modifier.fillMaxWidth().height(180.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                            backgroundError?.let { error -> 
+                                Text(
+                                    text = error,
+                                    color = MaterialTheme.colorScheme.error 
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top=8.dp,bottom = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ){
+                    Button(
+                        onClick = {
+                            val backgroundPath = try {
+                                selectedBackgroundPath ?: selectedBackgroundUri?.let { uri ->
+                                    ImageStorage(context).copyImage(uri)
+                                }
+                            } catch (exception: Exception){
+                                backgroundError = "Couldn't save the background image. Please try again"
+                                null
+                            }
+
+                            if(selectedBackgroundUri == null || backgroundPath != null){
+                                backgroundError = null 
+                                onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel,repeatDays,backgroundPath)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(58.dp)
+                    ){
+                        Text(
+                            text = "Save Alarm",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+            
                     TextButton(
                         onClick = onBack
                     ){
-                        Text(
-                            text = "<- Back",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text("Cancel")
                     }
-    
-                    Spacer(
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = "ADD ALARM",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(
-                        modifier = Modifier.width(16.dp)
-                    )
-                }
-    
-                Spacer(
-                    modifier = Modifier.height(36.dp)
-                )
-    
-                //Time Card
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    rootSize = rootSize
-                ){
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(
-                            vertical = 28.dp,
-                            horizontal = 20.dp
-                        ),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ){
-                        Spacer(
-                            modifier = Modifier.height(40.dp)
-                        )
-    
-                        Text(
-                            text = String.format("%02d : %02d", hour, minute),
-                            fontSize = 64.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable {
-                                showTimePicker = true
-                            }
-                        )
-                            
-                        Text(
-                            text = "Tap to choose time",
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-                        
-                Spacer(
-                    modifier = Modifier.height(20.dp)
-                )
-    
-                OutlinedTextField(
-                    value = alarmLabel,
-                    onValueChange = { alarmLabel = it },
-                    label = { Text("Alarm Label")},
-                    placeholder = { Text("e.g. Wake up!") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-    
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
-    
-                Text("Repeat")
-    
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-    
-                RepeatDaySelector(
-                    selectedDays = repeatDays,
-                    onDayToggle = { day -> 
-                        repeatDays = if (day in repeatDays){
-                            repeatDays - day
-                        }else{
-                            repeatDays + day 
-                        }
-                    }
-                ) 
-                        
-                //Sound Card
-                        
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    rootSize = rootSize
-                ){
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(22.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ){
-                        Text(
-                            text = "🎵 Alarm Sound 🎵",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                            
-                        Spacer(
-                            modifier = Modifier.height(12.dp)
-                        )
-                                
-                        if(selectedSoundPath == null){
-    
-                            Text(
-                                text = "Default sound",
-                                fontSize = 16.sp
-                            )
-                        } else {
-    
-                            Text(
-                                text = if(isExistingMediaSelection){
-                                    "🎵 ${selectedAudioName ?: "Library audio"}"
-                                }else{
-                                    "Audio imported! ✅"
-                                },
-                                fontSize = 16.sp
-                            )
-    
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ){
-                                Button(
-                                    onClick = {
-                                        if(isPlaying){
-                                            previewPlayer.value?.pause()
-                                            isPlaying = false
-                                        }else{
-                                            previewPlayer.value?.release()
-    
-                                            val player = MediaPlayer().apply {
-                                                setDataSource(selectedSoundPath)
-    
-                                                setOnCompletionListener {
-                                                    isPlaying = false
-                                                }
-    
-                                                prepare()
-                                                start()
-                                            }
-    
-                                            previewPlayer.value = player
-                                            isPlaying = true 
-                                        }
-                                    }
-                                ){
-                                    Text(
-                                        text = if(isPlaying) "⏸ Pause" else "▶ Play"
-                                    )
-                                }
-    
-                                Button(
-                                    onClick = {
-                                        previewPlayer.value?.stop()
-                                        previewPlayer.value?.release()
-                                        previewPlayer.value = null 
-                                        isPlaying = false 
-                                    }
-                                ){
-                                    Text("⏹ Stop")
-                                }
-                            }
-    
-                            if(!isExistingMediaSelection){
-    
-                                OutlinedTextField(
-                                    value = audioName,
-                                    onValueChange = {
-                                        audioName = it 
-                                        pendingAudioArtifact = null 
-                                        audioNameConfirmed = false 
-                                    },
-                                    label = {
-                                        Text("Name this audio")
-                                    },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-        
-                                Button(
-                                    onClick = {
-                                        val path = selectedSoundPath
-        
-                                        if(path!=null && audioName.isNotBlank()){
-                                            coroutineScope.launch {
-        
-                                                val idStorage = IdStorage(context)
-        
-                                                val artifactId = idStorage.nextAudioArtifactId()
-        
-                                                pendingAudioArtifact = AudioArtifact(
-                                                    id = artifactId,
-                                                    name = audioName.trim(),
-                                                    filePath = path 
-                                                )
-
-                                                audioNameConfirmed = true 
-                                            }
-                                        }
-                                    },
-                                    enabled = audioName.isNotBlank()
-                                ){
-                                    Text("Confirm")
-                                }
-
-                                if(audioNameConfirmed && pendingAudioArtifact!=null){
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "✓ Confirmed",
-                                        color = Color(0xFF2E7D32),
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-    
-                        }
-                                    
-                        Spacer(
-                            modifier = Modifier.height(16.dp)
-                        )
-                                        
-                        Button(
-                            onClick = {
-                                audioPicker.launch(
-                                    arrayOf("audio/*")
-                                )
-                            }
-                        ){
-    
-                            Text("📥 Import New Audio")
-                        }
-    
-                        Spacer(
-                            modifier = Modifier.height(10.dp)
-                        )
-    
-                        Button(
-                            onClick = {
-                                showMediaLibraryPicker = true 
-                            }
-                        ){
-                            Text("📚 Media Library")
-                        }
-                        Button(
-                            onClick = {
-                                imagePicker.launch(
-                                    PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            }
-                        ){
-                            Text("🖼️ Choose Background")
-                        }
-                        selectedBackgroundUri?.let { uri ->
-                            AsyncImage(
-                                model = uri,
-                                contentDescription = "Selected alarm background",
-                                modifier = Modifier.fillMaxWidth().height(180.dp),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        backgroundError?.let { error -> 
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error 
-                            )
-                        }
-                    }
-                }
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(top=8.dp,bottom = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ){
-                Button(
-                    onClick = {
-                        val backgroundPath = try {
-                            selectedBackgroundUri?.let { uri -> 
-                                ImageStorage(context).copyImage(uri)
-                            }
-                        } catch (exception: Exception){
-                            backgroundError = "Couldn't save the background image. Please try again"
-                            null
-                        }
-
-                        if(selectedBackgroundUri == null || backgroundPath != null){
-                            backgroundError = null 
-                            onSave(hour,minute,selectedSoundPath,pendingAudioArtifact,alarmLabel,repeatDays,backgroundPath)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(58.dp)
-                ){
-                    Text(
-                        text = "Save Alarm",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-        
-                TextButton(
-                    onClick = onBack
-                ){
-                    Text("Cancel")
                 }
             }
         }
+
     }
+
 
     if(showMediaLibraryPicker){
         Dialog(
