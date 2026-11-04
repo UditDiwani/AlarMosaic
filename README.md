@@ -11,7 +11,8 @@ This is an in-development, single-module Android application. The repository con
 - Create alarms with a time, optional label, and optional repeat days.
 - Schedule enabled alarms with `AlarmManager.setExactAndAllowWhileIdle` and re-schedule repeating alarms after they fire.
 - Enable, disable, and delete alarms from the main list.
-- Import audio through Android's document picker; files are copied into the app's private storage.
+- Import audio through Android's document picker and Images through image picker; both types
+  of files are copied into the app's private storage.
 - Name imported audio, preview it, select it for an alarm, and manage it from the Media Library.
 - Prevent deletion of a library sound that is referenced by an alarm.
 - Start a foreground media-playback service when an alarm fires, show a high-priority/full-screen alarm notification, and provide a stop action.
@@ -22,7 +23,6 @@ This is an in-development, single-module Android application. The repository con
 
 - Exact alarm scheduling depends on Android system access. When unavailable, the app sends the user to Android's exact-alarm settings before saving a new alarm.
 - The UI offers a "Default sound" state, but the service only starts playback when an alarm has a custom audio path. The default ringtone implementation is commented out, so an alarm without custom audio has no active sound-playback code path.
-- The **Choose Background** control previews a selected image while creating an alarm, but that image is not stored in the `Alarm` model or used by the ringing screen.
 - There is no alarm-edit or snooze UI in the current source.
 - Alarm and media metadata are serialized into delimited strings in DataStore without escaping. Labels or media names containing delimiters such as commas or pipes can make saved data unparsable.
 - Imported audio is copied with an `.mp3` filename regardless of the source format; the code does not validate or transcode it.
